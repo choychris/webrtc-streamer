@@ -1,18 +1,12 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/webrtc-streamer
     docker:
       - image: ubuntu:xenial
+    working_directory: ~/webrtc-streamer
     
     steps:
       - checkout
-    
-      - run:
-          name: Install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
         
       - run:
           name: Install Docker client
@@ -27,6 +21,6 @@ jobs:
           name: Build Docker image Deployment
           command: |
             docker login --email=$HEROKU_LOGIN --username=$HEROKU_LOGIN --password=$HEROKU_API_KEY registry.heroku.com
-            docker build --rm=false -t registry.heroku.com/APP_NAME/web .
-            docker push registry.heroku.com/APP_NAME/web:latest
+            docker build --rm=false -t registry.heroku.com/rtsp2webrtcteleclaw/web .
+            docker push registry.heroku.com/rtsp2webrtcteleclaw/web:latest
 
