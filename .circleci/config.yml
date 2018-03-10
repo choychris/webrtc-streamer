@@ -21,8 +21,8 @@ jobs:
             mv /tmp/docker/* /usr/bin
             
       - run: |
-          docker login -u_ -p$HEROKU_API_KEY registry.heroku.com
           docker build --rm=false -t registry.heroku.com/rtsp2webrtcteleclaw/web .
+          docker login --username=_ --password=$HEROKU_API_KEY registry.heroku.com
           docker push registry.heroku.com/rtsp2webrtcteleclaw/web
 
 
