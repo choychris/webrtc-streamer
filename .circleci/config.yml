@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build_x86_64:
+  build:
     working_directory: ~/webrtc-streamer
     docker:
       - image: ubuntu:xenial
@@ -30,8 +30,3 @@ jobs:
            docker build --rm=false -t registry.heroku.com/APP_NAME/web .
            docker push registry.heroku.com/APP_NAME/web:latest
            
-workflows:
-  version: 2
-  build:
-    jobs:
-      - build_x86_64
