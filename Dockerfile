@@ -31,4 +31,4 @@ EXPOSE 8000
 
 # Run when the container launches
 ENTRYPOINT [ "./webrtc-streamer" ]
-CMD [ "-a", "rtsp://217.17.220.110/axis-media/media.amp" ]
+CMD [ "-a", "rtsp://www.teleclaw.xyz:101/live/sub" ]
