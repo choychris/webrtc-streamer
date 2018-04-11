@@ -3,3 +3,4 @@ src/*.o
 *.tgz
 webrtc-streamer
 .DS_Store
+/node_modules/

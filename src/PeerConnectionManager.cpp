@@ -24,6 +24,10 @@
 #include "rtspvideocapturer.h"
 #endif
 
+#ifdef USE_X11
+#include "screencapturer.h"
+#endif
+
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
 
@@ -116,6 +120,36 @@ const Json::Value PeerConnectionManager::getMediaList()
 				value.append(media);
 			}
 		}
+		
+
+#ifdef USE_X11
+		std::unique_ptr<webrtc::DesktopCapturer> capturer = webrtc::DesktopCapturer::CreateWindowCapturer(webrtc::DesktopCaptureOptions::CreateDefault());	
+		if (capturer) {
+			webrtc::DesktopCapturer::SourceList sourceList;
+			if (capturer->GetSourceList(&sourceList)) {
+				for (auto source : sourceList) {
+					std::ostringstream os;
+					os << "window://" << source.title;
+					Json::Value media;
+					media["video"] = os.str();
+					value.append(media);
+				}
+			}
+		}
+		capturer = webrtc::DesktopCapturer::CreateScreenCapturer(webrtc::DesktopCaptureOptions::CreateDefault());		
+		if (capturer) {
+			webrtc::DesktopCapturer::SourceList sourceList;
+			if (capturer->GetSourceList(&sourceList)) {
+				for (auto source : sourceList) {
+					std::ostringstream os;
+					os << "screen://" << source.id;
+					Json::Value media;
+					media["video"] = os.str();
+					value.append(media);
+				}
+			}
+		}
+#endif		
 	}
 
 	for (auto url : urlList_)
@@ -154,11 +188,6 @@ const Json::Value PeerConnectionManager::getVideoDeviceList()
 		}
 	}
 
-	for (auto url : urlList_)
-	{
-		value.append(url.first);
-	}
-
 	return value;
 }
 
@@ -172,7 +201,6 @@ const Json::Value PeerConnectionManager::getAudioDeviceList()
 	int16_t num_audioDevices = audioDeviceModule_->RecordingDevices();
 	RTC_LOG(INFO) << "nb audio devices:" << num_audioDevices;
 
-	std::map<std::string,std::string> deviceMap;
 	for (int i = 0; i < num_audioDevices; ++i)
 	{
 		char name[webrtc::kAdmMaxDeviceNameSize] = {0};
@@ -180,11 +208,8 @@ const Json::Value PeerConnectionManager::getAudioDeviceList()
 		if (audioDeviceModule_->RecordingDeviceName(i, name, id) != -1)
 		{
 			RTC_LOG(INFO) << "audio device name:" << name << " id:" << id;
-			deviceMap[name]=id;
+			value.append(name);
 		}
-	}
-	for (auto& pair : deviceMap) {
-		value.append(pair.first);
 	}
 
 	return value;
@@ -525,7 +550,7 @@ bool PeerConnectionManager::streamStillUsed(const std::string & streamLabel)
 		rtc::scoped_refptr<webrtc::StreamCollectionInterface> localstreams (peerConnection->local_streams());
 		for (unsigned int i = 0; i<localstreams->count(); i++)
 		{
-			if (localstreams->at(i)->label() == streamLabel)
+			if (localstreams->at(i)->id() == streamLabel)
 			{
 				stillUsed = true;
 				break;
@@ -554,7 +579,7 @@ const Json::Value PeerConnectionManager::hangUp(const std::string &peerid)
 		rtc::scoped_refptr<webrtc::StreamCollectionInterface> localstreams (peerConnection->local_streams());
 		for (unsigned int i = 0; i<localstreams->count(); i++)
 		{
-			std::string streamLabel = localstreams->at(i)->label();
+			std::string streamLabel = localstreams->at(i)->id();
 
 			bool stillUsed = this->streamStillUsed(streamLabel);
 			if (!stillUsed)
@@ -656,7 +681,7 @@ const Json::Value PeerConnectionManager::getPeerConnectionList()
 						}
 						
 						Json::Value stream;
-						stream[localstreams->at(i)->label()] = tracks;
+						stream[localstreams->at(i)->id()] = tracks;
 						
 						streams.append(stream);						
 					}
@@ -750,6 +775,12 @@ rtc::scoped_refptr<webrtc::VideoTrackInterface> PeerConnectionManager::CreateVid
 		CivetServer::getParam(options, "rtptransport", rtptransport);
 		capturer.reset(new RTSPVideoCapturer(videourl, timeout, rtptransport));
 #endif
+	}
+	else if ( (videourl.find("screen://") == 0) || (videourl.find("window://") == 0) )
+	{
+#ifdef USE_X11
+		capturer.reset(new ScreenCapturer(videourl));
+#endif	
 	}
 	else
 	{

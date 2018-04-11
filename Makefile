@@ -1,15 +1,14 @@
 CC=$(CROSS)gcc 
 CXX=$(CROSS)g++
 AR=$(CROSS)ar
-SYSROOT?=$(shell $(CC) -print-sysroot)
-SYSROOTOPT=--sysroot=$(SYSROOT)
-CFLAGS = -Wall -pthread -g -std=c++11 -Iinc $(SYSROOTOPT) $(CFLAGS_EXTRA)
-LDFLAGS = -pthread $(SYSROOTOPT)
-WEBRTCROOT?=../webrtc
+CFLAGS = -Wall -pthread -g -std=c++11 -Iinc 
+LDFLAGS = -pthread 
+WEBRTCROOT?=$(CURDIR)/../webrtc
 WEBRTCBUILD?=Release
 PREFIX?=/usr
 GITVERSION=$(shell git describe --tags --always --dirty)
 VERSION=$(GITVERSION)
+
 
 TARGET = $(notdir $(CURDIR))
 all: $(TARGET)
@@ -17,6 +16,16 @@ all: $(TARGET)
 # webrtc
 VERSION+=webrtc@$(shell git -C $(WEBRTCROOT)/src describe --tags --always --dirty)
 WEBRTCLIBPATH=$(WEBRTCROOT)/src/$(GYP_GENERATOR_OUTPUT)/out/$(WEBRTCBUILD)
+WEBRTCSYSROOT=$(shell grep -Po 'sysroot=\K[^ ]*' $(WEBRTCLIBPATH)/obj/webrtc_common.ninja)
+ifeq ($(WEBRTCSYSROOT),)
+	SYSROOT?=$(shell $(CC) -print-sysroot)
+else
+	SYSROOT?=$(WEBRTCLIBPATH)/$(WEBRTCSYSROOT)
+endif
+$(info SYSROOT=$(SYSROOT))
+SYSROOTOPT=--sysroot=$(SYSROOT)
+CFLAGS += $(SYSROOTOPT) $(CFLAGS_EXTRA)
+LDFLAGS += $(SYSROOTOPT)
 
 CFLAGS += -DWEBRTC_POSIX -fno-rtti -DHAVE_JPEG
 CFLAGS += -I $(WEBRTCROOT)/src -I $(WEBRTCROOT)/src/third_party/jsoncpp/source/include -I $(WEBRTCROOT)/src/third_party/libyuv/include
@@ -28,6 +37,12 @@ else
 	CFLAGS +=-DNDEBUG=1
 endif
 LDFLAGS += -ldl -lrt 
+
+# desktop capture
+ifneq ($(wildcard $(WEBRTCLIBPATH)/obj/modules/desktop_capture/desktop_capture.ninja),)
+CFLAGS += -DUSE_X11
+LDFLAGS += -lX11 -lXext -lXdamage -lXfixes -lXcomposite 
+endif
 
 WEBRTC_LIB += $(shell find $(WEBRTCLIBPATH)/obj -name '*.o')
 LIBS+=libWebRTC_$(GYP_GENERATOR_OUTPUT)_$(WEBRTCBUILD).a
@@ -101,7 +116,7 @@ clean:
 	rm -f src/*.o libWebRTC_$(GYP_GENERATOR_OUTPUT)_$(WEBRTCBUILD).a $(TARGET)
 	make -C civetweb clean
 	make -C h264bitstream clean
-	make -k -C live555helper clean
+	make -k -C live555helper clean PREFIX=$(PREFIX) SYSROOT=$(SYSROOT)
 
 install: $(TARGET)
 	install -m 0755 $(TARGET) /usr/local/bin

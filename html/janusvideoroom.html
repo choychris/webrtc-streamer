@@ -3,7 +3,6 @@
 <script src="libs/request.min.js" ></script>
 <script src="libs/ag-grid.min.js"></script>
 <script src="libs/adapter.js"></script>
-<script src="sendrequest.js" ></script>
 <script src="janusvideoroom.json" ></script>
 <script src="janusvideoroom.js" ></script>
 <script src="webrtcstreamer.json" ></script>
@@ -50,7 +49,7 @@ footer {
 				params.api.refreshCells([params.node], ['roomid']);
 				
 				if (!janus) {
-					janus = new JanusVideoRoom(document.querySelector('#janusUrl').value, webrtcConfig.url, request);
+					janus = new JanusVideoRoom(document.querySelector('#janusUrl').value, webrtcConfig.url);
 					janus.subscribeEvents(clientCallBack);
 				}
 				janus.join(parseInt(params.data.roomid), params.data.url, params.data.url);
