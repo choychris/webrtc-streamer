@@ -29,7 +29,7 @@ jobs:
 
       - run:
           name: "Log in to AWS ECR"
-          command: eval $(aws ecr get-login)
+          command: eval $(aws ecr get-login --no-include-email --region ap-southeast-1)
             
       - run: 
           name: "Build & Push Docker Image"
