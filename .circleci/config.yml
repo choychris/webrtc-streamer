@@ -34,7 +34,7 @@ jobs:
       - run: 
           name: "Build & Push Docker Image"
           command: |
-            docker build --rm=false -t $AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rtsp2webrtcaws:latest
+            docker build --rm=false -t $AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rtsp2webrtcaws:latest .
             docker push $AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rtsp2webrtcaws:latest
 
 
