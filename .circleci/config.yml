@@ -10,6 +10,13 @@ jobs:
       
       - setup_remote_docker: 
           docker_layer_caching: true
+
+      - run:
+          name: Install aws
+          command: |
+            curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+            unzip awscli-bundle.zip
+            sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
     
       - run:
           name: Install Docker client
@@ -19,10 +26,15 @@ jobs:
             curl -L -o /tmp/docker-$VER.tgz https://get.docker.com/builds/Linux/x86_64/docker-$VER.tgz
             tar -xz -C /tmp -f /tmp/docker-$VER.tgz
             mv /tmp/docker/* /usr/bin
+
+      - run:
+          name: "Log in to AWS ECR"
+          command: eval $(aws ecr get-login)
             
-      - run: |
-          docker login --username=_ --password=$HEROKU_API_KEY registry.heroku.com
-          docker build --rm=false -t registry.heroku.com/rtsp2webrtcteleclaw/web .
-          docker push registry.heroku.com/rtsp2webrtcteleclaw/web
+      - run: 
+          name: "Build & Push Docker Image"
+          command: |
+            docker build --rm=false -t $AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rtsp2webrtcaws:latest
+            docker push $AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/rtsp2webrtcaws:latest
 
 
